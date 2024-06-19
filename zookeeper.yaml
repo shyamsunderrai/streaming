@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: zookeeper
+  name: kzookeeper
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - image: apache/kafka:3.7.0
+        name: zookeeper
+        ports:
+        - containerPort: 2181
+        command: ["/bin/sh"]
+        args: ["-c", "/opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties" ]
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: zookeeper
+  name: zookeeper
+  namespace: demo
+spec:
+  ports:
+  - name: "2181"
+    port: 2181
+    protocol: TCP
+    targetPort: 2181
+  
+  selector:
+    app: zookeeper
+  type: NodePort
+status:
+  loadBalancer: {}
+
+

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: curly
+  name: curly
+  namespace: demo
+spec:
+  containers:
+  - image: curlimages/curl:8.8.0
+    imagePullPolicy: IfNotPresent
+    name: curly
+    command: ["/bin/sh"]
+    args: ["-c","sleep 1000"] 
+  dnsPolicy: ClusterFirst
