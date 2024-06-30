@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: operator
+    meta.helm.sh/release-namespace: demo
+  creationTimestamp: "2024-06-24T08:41:11Z"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v5.0.15
+    helm.sh/chart: operator-5.0.15
+  name: console
+  namespace: demo
+  resourceVersion: "690797"
+  uid: a1c223c3-b31e-413f-b203-7204ed38af00
+spec:
+  clusterIP: 10.105.79.37
+  clusterIPs:
+    - 10.105.79.37
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+      nodePort: 30900
+    - name: https
+      port: 9443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: operator-console
+    app.kubernetes.io/name: operator
+  sessionAffinity: None
+  type: NodePort
+status:
+  loadBalancer: {}

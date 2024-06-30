@@ -1,0 +1,291 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    created-by: kubectl-directpv
+  generateName: node-server-
+  labels:
+    controller-revision-hash: 75b646fcce
+    pod-template-generation: "1"
+    selector.directpv.min.io: directpv-min-io-l72ab
+    selector.directpv.min.io.service: enabled
+  name: node-server-b7b29
+  namespace: demo
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DaemonSet
+    name: node-server
+    uid: 9d686ec8-f17b-495f-892d-a0964f71e69d
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchFields:
+          - key: metadata.name
+            operator: In
+            values:
+            - docker-desktop
+  containers:
+  - args:
+    - --v=3
+    - --csi-address=unix:///csi/csi.sock
+    - --kubelet-registration-path=/var/lib/kubelet/plugins/directpv-min-io/csi.sock
+    env:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    image: quay.io/minio/csi-node-driver-registrar@sha256:c805fdc166761218dc9478e7ac8e0ad0e42ad442269e75608823da3eb761e67e
+    imagePullPolicy: IfNotPresent
+    name: node-driver-registrar
+    resources: {}
+    terminationMessagePath: /var/log/driver-registrar-termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /csi
+      mountPropagation: None
+      name: socket-dir
+    - mountPath: /registration
+      mountPropagation: None
+      name: registration-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-5r8cq
+      readOnly: true
+  - args:
+    - node-server
+    - -v=3
+    - --identity=directpv-min-io
+    - --csi-endpoint=$(CSI_ENDPOINT)
+    - --kube-node-name=$(KUBE_NODE_NAME)
+    - --readiness-port=30443
+    - --metrics-port=10443
+    env:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: CSI_ENDPOINT
+      value: unix:///csi/csi.sock
+    image: quay.io/minio/directpv:v4.0.11
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 5
+      httpGet:
+        path: /healthz
+        port: healthz
+        scheme: HTTP
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 10
+    name: node-server
+    ports:
+    - containerPort: 30443
+      name: readinessport
+      protocol: TCP
+    - containerPort: 9898
+      name: healthz
+      protocol: TCP
+    - containerPort: 10443
+      name: metrics
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 5
+      httpGet:
+        path: /ready
+        port: readinessport
+        scheme: HTTP
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 10
+    resources: {}
+    securityContext:
+      privileged: true
+    terminationMessagePath: /var/log/driver-termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /csi
+      mountPropagation: None
+      name: socket-dir
+    - mountPath: /var/lib/kubelet/pods
+      mountPropagation: Bidirectional
+      name: mountpoint-dir
+    - mountPath: /var/lib/kubelet/plugins
+      mountPropagation: Bidirectional
+      name: plugins-dir
+    - mountPath: /var/lib/directpv/
+      mountPropagation: Bidirectional
+      name: directpv-common-root
+    - mountPath: /sys
+      mountPropagation: Bidirectional
+      name: sysfs
+    - mountPath: /dev
+      mountPropagation: HostToContainer
+      name: devfs
+      readOnly: true
+    - mountPath: /run/udev/data
+      mountPropagation: Bidirectional
+      name: run-udev-data-dir
+      readOnly: true
+    - mountPath: /var/lib/direct-csi/
+      mountPropagation: Bidirectional
+      name: direct-csi-common-root
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-5r8cq
+      readOnly: true
+  - args:
+    - node-controller
+    - -v=3
+    - --kube-node-name=$(KUBE_NODE_NAME)
+    env:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    image: quay.io/minio/directpv:v4.0.11
+    imagePullPolicy: IfNotPresent
+    name: node-controller
+    resources: {}
+    securityContext:
+      privileged: true
+    terminationMessagePath: /var/log/driver-termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /csi
+      mountPropagation: None
+      name: socket-dir
+    - mountPath: /var/lib/kubelet/pods
+      mountPropagation: Bidirectional
+      name: mountpoint-dir
+    - mountPath: /var/lib/kubelet/plugins
+      mountPropagation: Bidirectional
+      name: plugins-dir
+    - mountPath: /var/lib/directpv/
+      mountPropagation: Bidirectional
+      name: directpv-common-root
+    - mountPath: /sys
+      mountPropagation: Bidirectional
+      name: sysfs
+    - mountPath: /dev
+      mountPropagation: HostToContainer
+      name: devfs
+      readOnly: true
+    - mountPath: /run/udev/data
+      mountPropagation: Bidirectional
+      name: run-udev-data-dir
+      readOnly: true
+    - mountPath: /var/lib/direct-csi/
+      mountPropagation: Bidirectional
+      name: direct-csi-common-root
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-5r8cq
+      readOnly: true
+  - args:
+    - --csi-address=/csi/csi.sock
+    - --health-port=9898
+    image: quay.io/minio/livenessprobe@sha256:f3bc9a84f149cd7362e4bd0ae8cd90b26ad020c2591bfe19e63ff97aacf806c3
+    imagePullPolicy: IfNotPresent
+    name: liveness-probe
+    resources: {}
+    terminationMessagePath: /var/log/driver-liveness-termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /csi
+      mountPropagation: None
+      name: socket-dir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-5r8cq
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostPID: true
+  nodeName: docker-desktop
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: directpv-min-io
+  serviceAccountName: directpv-min-io
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/disk-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/memory-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/pid-pressure
+    operator: Exists
+  - effect: NoSchedule
+    key: node.kubernetes.io/unschedulable
+    operator: Exists
+  volumes:
+  - hostPath:
+      path: /var/lib/kubelet/plugins/directpv-min-io
+      type: DirectoryOrCreate
+    name: socket-dir
+  - hostPath:
+      path: /var/lib/kubelet/pods
+      type: DirectoryOrCreate
+    name: mountpoint-dir
+  - hostPath:
+      path: /var/lib/kubelet/plugins_registry
+      type: DirectoryOrCreate
+    name: registration-dir
+  - hostPath:
+      path: /var/lib/kubelet/plugins
+      type: DirectoryOrCreate
+    name: plugins-dir
+  - hostPath:
+      path: /var/lib/directpv/
+      type: DirectoryOrCreate
+    name: directpv-common-root
+  - hostPath:
+      path: /sys
+      type: DirectoryOrCreate
+    name: sysfs
+  - hostPath:
+      path: /dev
+      type: DirectoryOrCreate
+    name: devfs
+  - hostPath:
+      path: /run/udev/data
+      type: DirectoryOrCreate
+    name: run-udev-data-dir
+  - hostPath:
+      path: /var/lib/direct-csi/
+      type: DirectoryOrCreate
+    name: direct-csi-common-root
+  - name: kube-api-access-5r8cq
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace

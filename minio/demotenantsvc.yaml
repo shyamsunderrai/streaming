@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    v1.min.io/tenant: demotenant
+  name: demotenant-svc
+  namespace: demo
+  ownerReferences:
+  - apiVersion: minio.min.io/v2
+    blockOwnerDeletion: true
+    controller: true
+    kind: Tenant
+    name: demotenant
+    uid: e86fd6cc-f005-4d53-a487-7563a9435264
+spec:
+  clusterIP: 10.108.189.111
+  clusterIPs:
+  - 10.108.189.111
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http-minio
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+    nodePort: 31234
+  selector:
+    v1.min.io/tenant: demotenant
+  sessionAffinity: None
+  type: NodePort

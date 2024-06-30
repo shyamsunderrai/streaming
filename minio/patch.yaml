@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: demotenant-hl
+  namespace: demo
+  labels:
+    v1.min.io/tenant: demotenant
+  ownerReferences:
+  - apiVersion: minio.min.io/v2
+    blockOwnerDeletion: true
+    controller: true
+    kind: Tenant
+    name: demotenant
+    uid: e86fd6cc-f005-4d53-a487-7563a9435263
+spec:
+  type: NodePort
+  clusterIP: 10.108.189.179  # Use the cluster IP assigned to the service
+  ports:
+  - name: http-minio
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+    nodePort: 32000  # Ensure this port is available and within the NodePort range (30000-32767)
+  selector:
+    v1.min.io/tenant: demotenant
+

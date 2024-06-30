@@ -1,0 +1,14 @@
+kubectl patch service demotenant-console -n demo -p '{
+    "spec": {
+        "type": "NodePort",
+        "ports": [{
+            "name": "https-console",
+            "port": 9443,
+            "protocol": "TCP",
+            "targetPort": 9443,
+            "nodePort": 32235
+        }],
+        "clusterIP": "10.108.189.177"
+    }
+}'
+

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-compactor
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor
+    spec:
+      containers:
+      - name: thanos-compactor
+        image: quay.io/thanos/thanos:latest
+        args:
+        - compact
+        - --data-dir=/var/thanos/compact
+        - --objstore.config-file=/etc/thanos/minio.yaml
+        - --http-address=0.0.0.0:10902
+        volumeMounts:
+        - name: thanos-config
+          mountPath: /etc/thanos
+          subPath: minio.yaml
+        - name: compact-data
+          mountPath: /var/thanos/compact
+      volumes:
+      - name: thanos-config
+        configMap:
+          name: thanos-minio-config
+      - name: compact-data
+        emptyDir: {}
+

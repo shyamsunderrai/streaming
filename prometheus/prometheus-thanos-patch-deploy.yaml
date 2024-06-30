@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus-container
+        image: prom/prometheus:v2.45.6
+        volumeMounts:
+        - name: conf-prom
+          mountPath: /etc/prometheus
+        - name: prometheus-storage
+          mountPath: /prometheus
+      - name: thanos-sidecar
+        image: quay.io/thanos/thanos:v0.15.0
+        args:
+        - sidecar
+        - --tsdb.path=/prometheus
+        - --objstore.config-file=/etc/thanos/minio.yaml
+        env:
+        - name: THANOS_S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: thanos-minio-secret
+              key: accesskey
+        - name: THANOS_S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: thanos-minio-secret
+              key: secretkey
+        volumeMounts:
+        - name: prometheus-storage
+          mountPath: /prometheus
+        - name: thanos-config
+          mountPath: /etc/thanos
+          subPath: minio.yaml
+      volumes:
+      - name: conf-prom
+        configMap:
+          name: prom-conf
+      - name: prometheus-storage
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+      - name: thanos-config
+        configMap:
+          name: thanos-minio-config
+

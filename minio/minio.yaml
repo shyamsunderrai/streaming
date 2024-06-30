@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: minio
+  name: minio
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - image: shyamsunderrai/minio:0.1
+        name: minio
+        ports:
+        - containerPort: 9001
+        - containerPort: 9000
+        volumeMounts:
+        - name: minio-storage
+          mountPath: /data
+        command: ["sh", "-c", "/bin/minio server /data"] 
+        env:
+        - name: MINIO_ROOT_USER
+          value: "minio"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minio12345"
+        - name: MINIO_ACCESS_KEY
+          value: "U4B6Zi!b75DXSPm%avZb"
+        - name: MINIO_SECRET_KEY
+          value: "Q4#Q6y8G%%Px#npP4dudUobU#NBcGB7RMKV4ajYb"
+        - name: MINIO_OPTS
+          value: "--address :9000 --console-address :9001"
+        - name: MINIO_UPDATE_MINISIGN_PUBKEY
+          value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav"
+        - name: MINIO_CONFIG_ENV_FILE
+          value: "config.env"
+        - name: MC_CONFIG_DIR
+          value: "/tmp/.mc"
+      volumes:
+      - name: minio-storage
+        persistentVolumeClaim:
+          claimName: minio-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: minio
+  name: minio-service
+  namespace: demo
+spec:
+  ports:
+  - name: "9000"
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  - name: "9001"
+    port: 9001
+    protocol: TCP
+    targetPort: 9001
+  selector:
+    app: minio
+  type: NodePort
+
